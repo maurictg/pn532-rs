@@ -61,9 +61,9 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532<D> {
             }
         };
 
-        try!(self.device.send_wait_ack(cmd));
+        self.device.send_wait_ack(cmd)?;
         let mut rcvbuf = [0u8];
-        let len = try!(self.device.recv_reply_ack(&mut rcvbuf));
+        let len = self.device.recv_reply_ack(&mut rcvbuf)?;
         if len > 0 {
             if rcvbuf[0] == 0x15 {
                 Ok(())
@@ -81,8 +81,8 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532<D> {
             raw_buf[0] = 0x4A;
             let len = options.fill_buf(&mut raw_buf[1..]);
 
-            try!(self.device.send_wait_ack(&raw_buf[..(1 + len)]));
-            try!(self.device.recv_reply_ack(raw_buf as &mut [u8]));
+           self.device.send_wait_ack(&raw_buf[..(1 + len)])?;
+           self.device.recv_reply_ack(raw_buf as &mut [u8])?;
         }
 
         unsafe {
@@ -103,8 +103,8 @@ impl<D: bus::WaitRead + bus::BusWrite> tags_internal::PN532Transceive for PN532<
         let to_copy = min(buf.len(), data_out.len());
         buf[2..(2 + to_copy)].copy_from_slice(&data_out[0..to_copy]);
 
-        try!(self.device.send_wait_ack(&buf[..(2 + to_copy)]));
-        let len = try!(self.device.recv_reply_ack(&mut buf));
+        self.device.send_wait_ack(&buf[..(2 + to_copy)])?;
+        let len = self.device.recv_reply_ack(&mut buf)?;
 
         // TODO: check buf[0] == 0x41 && buf[1] is status OK
         let to_copy = min(len, data_in.len());

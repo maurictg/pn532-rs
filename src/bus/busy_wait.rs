@@ -59,7 +59,7 @@ impl<D: BusRead + BusWrite, T: Timer> BusyWait<D, T> {
     fn wait_iter(&mut self, buf: &mut [u8]) -> Result<bool, D::ReadError> {
         T::wait(&self.delay);
 
-        try!(self.device.read(buf));
+        self.device.read(buf)?;
 
         Ok(buf[0] & 1 == 1)
     }
@@ -70,7 +70,7 @@ impl<D: BusRead + BusWrite, T: Timer> WaitRead for BusyWait<D, T> {
 
     fn wait_read(&mut self, buf: &mut [u8]) -> Result<usize, Self::ReadError> {
         loop {
-            if try!(self.wait_iter(buf)) {
+            if self.wait_iter(buf)? {
                 return Ok(buf.len());
             }
         }
@@ -83,7 +83,7 @@ impl<D: BusRead + BusWrite, T: Timer> WaitReadTimeout for BusyWait<D, T> {
     fn wait_read_timeout(&mut self, buf: &mut [u8], timeout: Self::Duration) -> WaitResult<usize, Self::ReadError> {
         let start_time = T::now();
         loop {
-            if try!(self.wait_iter(buf)) {
+            if self.wait_iter(buf)? {
                 return Ok(buf.len());
             }
 

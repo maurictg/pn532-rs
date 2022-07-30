@@ -107,8 +107,8 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532Proto<D> {
     }
 
     pub fn send_wait_ack(&mut self, data: &[u8]) -> CommResult<(), D::ReadError, D::WriteError> {
-        try!(self.send(data));
-        try!(self.recv_ack());
+        self.send(data)?;
+        self.recv_ack()?;
         Ok(())
     }
 
@@ -118,12 +118,12 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532Proto<D> {
         let mut iter = recved.iter();
         let mut parser = ResponseParser::default();
         for b in iter.by_ref() {
-            if !try!(parser.next(*b)) {
+            if !parser.next(*b)? {
                 break;
             }
         }
 
-        let len = try!(parser.pkt_len().ok_or(RecvError::UnexpectedEnd)) as usize;
+        let len = parser.pkt_len().ok_or(RecvError::UnexpectedEnd)? as usize;
 
         let pkt = iter.as_slice();
         if len > pkt.len() {
@@ -151,14 +151,14 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532Proto<D> {
 
     pub fn recv(&mut self, data: &mut[u8]) -> Result<usize, RecvError<D::ReadError>> {
         let mut buf = [0u8; 32];
-        let len = try!(self.device.wait_read(&mut buf).map_err(RecvError::ReadError));
+        let len = self.device.wait_read(&mut buf).map_err(RecvError::ReadError)?;
 
         Self::process_packet(&buf[0..len], data)
     }
 
     pub fn recv_ack(&mut self) -> Result<(), RecvError<D::ReadError>> {
         let mut buf = [0u8; 32];
-        try!(self.device.wait_read(&mut buf).map_err(RecvError::ReadError));
+        self.device.wait_read(&mut buf).map_err(RecvError::ReadError)?;
 
         let mut parser = PreambleParser::default();
         for b in &buf {
@@ -172,8 +172,8 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532Proto<D> {
     }
 
     pub fn recv_reply_ack(&mut self, data: &mut[u8]) -> CommResult<usize, D::ReadError, D::WriteError> {
-        let len = try!(self.recv(data));
-        try!(self.send_ack());
+        let len = self.recv(data)?;
+        self.send_ack()?;
         Ok(len)
     }
 }
@@ -181,7 +181,7 @@ impl<D: bus::WaitRead + bus::BusWrite> PN532Proto<D> {
 impl<D: bus::WaitRead + bus::WaitReadTimeout + bus::BusWrite> PN532Proto<D> {
     pub fn recv_with_timeout(&mut self, data: &mut[u8], timeout: D::Duration) -> WaitResult<usize, RecvError<D::ReadError>> {
         let mut buf = [0u8; 32];
-        let len = try!(self.device.wait_read_timeout(&mut buf, timeout).map_err(|e| e.map(RecvError::ReadError)));
+        let len = self.device.wait_read_timeout(&mut buf, timeout).map_err(|e| e.map(RecvError::ReadError))?;
 
         Self::process_packet(&buf[0..len], data).map_err(Into::into)
     }

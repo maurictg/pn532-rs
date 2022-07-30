@@ -8,7 +8,7 @@ with_i2c = ["i2cdev"]
 debug_communication = []
 
 [dependencies]
-i2cdev = { version = "0.3", optional = true }
+i2cdev = { version = "0.5.1", optional = true }
 
 [dev-dependencies]
 assert_matches = "1"
